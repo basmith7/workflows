@@ -6,7 +6,7 @@ repos can both call them; there is nothing secret here. Not accepting contributi
 ## `build-image.yml`
 
 Builds one Docker image from the calling repo, pushes it to `ghcr.io/<owner>/<image>` with the
-OCI `source`/`revision`/`version`/`created` labels, and caches layers in the GitHub Actions cache.
+OCI `source`/`revision`/`version`/`created` labels, and caches layers in the registry as `:buildcache`, so every trigger (tag, branch, dispatch) shares one cache.
 Inputs and their defaults are documented at the top of the file. A repo that builds two images
 calls it twice (a matrix); tests stay in the caller as a job the build `needs:`. A build that
 mounts BuildKit secrets gets them through the `build-secrets` secret (`id=value` lines), which the

@@ -1,7 +1,8 @@
 name: Build image
 
 # Builds one Docker image from the calling repo and pushes it to ghcr.io/<owner>/<image>,
-# with the OCI source/revision/version/created labels and a GitHub Actions layer cache.
+# with the OCI source/revision/version/created labels and a registry layer cache at :buildcache
+# (a GitHub Actions cache is scoped to the triggering ref, so tag builds could never reuse it).
 # Called from a repo's own workflow; see the README for the caller.
 on:
   workflow_call:
@@ -114,5 +115,5 @@ jobs:
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-          cache-from: type=gha,scope=${{ steps.meta.outputs.image }}
-          cache-to: type=gha,scope=${{ steps.meta.outputs.image }},mode=max
+          cache-from: type=registry,ref=${{ steps.meta.outputs.image }}:buildcache
+          cache-to: type=registry,ref=${{ steps.meta.outputs.image }}:buildcache,mode=max
