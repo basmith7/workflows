@@ -1,0 +1,20 @@
+name: Test
+
+# shellcheck and the check-drift test for templates/next-prisma.
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  check-drift:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - run: shellcheck templates/next-prisma/check-drift templates/next-prisma/docker-entrypoint.sh tests/*.sh
+      - run: bash tests/check-drift.test.sh
