@@ -54,3 +54,18 @@ exits nonzero on drift. `check-drift --help` gives the marker rules.
   app at once when the Node fix lands.
 
 `tests/check-drift.test.sh` tests the checker against fixture apps made from the live template.
+
+## Renovate: `default.json`
+
+The one dependency-update policy. A repo opts in with a `renovate.json` of
+`{"extends": ["github>basmith7/workflows"]}` once its default branch runs shared CI (Renovate
+merges only after CI passes, and a repo with no checks has nothing to wait for). Minor and patch
+updates arrive as one grouped PR each Monday morning and merge themselves (`platformAutomerge` is
+off because free private repos have no required checks, so GitHub's own auto-merge would not
+wait for CI); majors open as PRs for a person. `basmith7/workflows@main` refs are never touched.
+
+`@basmith7/*` packages on GitHub Packages are read with the `GH_PACKAGES_TOKEN` credential (a
+classic token with `read:packages`), stored in the Mend developer portal
+(developer.mend.io → basmith7 → Settings → Credentials). The hosted app no longer reads
+encrypted secrets from config files. Validate changes with
+`npx --yes --package renovate@latest renovate-config-validator --strict default.json`.
