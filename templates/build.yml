@@ -1,0 +1,23 @@
+name: Build
+
+# A v* tag tests the commit, then builds ghcr.io/basmith7/<repo>:<tag> and :latest; nothing
+# deploys on its own. Deploy with `deploy-now <tag>` (tower-deploy). Both jobs are shared:
+# https://github.com/basmith7/workflows
+# Give `test` the same `with:` as ci.yml. For @basmith7 packages, set packages-read: true there
+# and npm-token: true on `image`.
+on:
+  push:
+    tags: ["v*"]
+
+jobs:
+  test:
+    uses: basmith7/workflows/.github/workflows/node-ci.yml@main
+    permissions:
+      contents: read
+      packages: read
+  image:
+    needs: test
+    uses: basmith7/workflows/.github/workflows/build-image.yml@main
+    permissions:
+      contents: read
+      packages: write

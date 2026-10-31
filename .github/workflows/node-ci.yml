@@ -1,0 +1,72 @@
+name: Node CI
+
+# Installs a Node repo's dependencies (npm ci, with the npm cache) and runs its checks.
+# Called from a repo's ci.yml on pull requests and from the test job of its build.yml;
+# see templates/ for both callers.
+on:
+  workflow_call:
+    inputs:
+      runs-on:
+        description: Runner, as JSON (a label string or a list of labels)
+        type: string
+        default: '"ubuntu-latest"'
+      node-version:
+        description: Node version for actions/setup-node
+        type: string
+        default: "22"
+      packages-read:
+        description: Authenticate npm to GitHub Packages for @basmith7 packages (the caller grants packages read)
+        type: boolean
+        default: false
+      prisma:
+        description: Run prisma generate after installing
+        type: boolean
+        default: false
+      commands:
+        description: Newline-separated commands to run; empty runs npm run lint, typecheck, test and build, each only if package.json has it
+        type: string
+        default: ""
+
+permissions:
+  contents: read
+  packages: read
+
+jobs:
+  check:
+    runs-on: ${{ fromJSON(inputs.runs-on) }}
+    timeout-minutes: 30 # a hung test or build shouldn't burn the 6 h default on private-repo minutes
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: ${{ inputs.node-version }}
+          cache: npm
+          registry-url: ${{ inputs.packages-read && 'https://npm.pkg.github.com' || '' }}
+          scope: ${{ inputs.packages-read && '@basmith7' || '' }}
+
+      - run: npm ci
+        env:
+          NODE_AUTH_TOKEN: ${{ inputs.packages-read && secrets.GITHUB_TOKEN || '' }}
+
+      - if: inputs.prisma
+        run: npx prisma generate
+
+      - name: Checks
+        env:
+          COMMANDS: ${{ inputs.commands }}
+        run: |
+          if [ -z "$COMMANDS" ]; then
+            COMMANDS=$(node -e '
+              const scripts = require("./package.json").scripts || {};
+              for (const s of ["lint", "typecheck", "test", "build"]) if (scripts[s]) console.log("npm run " + s);
+            ')
+          fi
+          while IFS= read -r cmd; do
+            [ -n "${cmd// }" ] || continue
+            echo "::group::$cmd"
+            bash -eo pipefail -c "$cmd" || { echo "::endgroup::"; echo "::error::failed: $cmd"; exit 1; }
+            echo "::endgroup::"
+          done <<<"$COMMANDS"

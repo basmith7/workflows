@@ -1,0 +1,23 @@
+name: Lint
+
+# actionlint over this repo's workflows and the caller templates (the templates aren't under
+# .github/workflows, so they're named explicitly).
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  actionlint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - name: actionlint
+        run: |
+          docker run --rm -v "$PWD:/repo" -w /repo rhysd/actionlint:1.7.12 -color
+          docker run --rm -v "$PWD:/repo" -w /repo rhysd/actionlint:1.7.12 -color templates/*.yml

@@ -1,0 +1,81 @@
+name: Python CI
+
+# Runs a uv project's checks: by default ruff with the shared rule set, then pytest.
+# The shared ruff.toml (this repo's root) is copied into the caller's checkout from the same
+# commit as this workflow, since ruff can't extend a remote config. A repo keeps no ruff.toml
+# of its own. Called from a repo's ci.yml and from the test job of its build.yml.
+on:
+  workflow_call:
+    inputs:
+      runs-on:
+        description: Runner, as JSON (a label string or a list of labels)
+        type: string
+        default: '"ubuntu-latest"'
+      python-version:
+        description: Python version uv installs and runs
+        type: string
+        default: "3.12"
+      apt-packages:
+        description: Space- or newline-separated apt packages to install first (e.g. ffmpeg)
+        type: string
+        default: ""
+      commands:
+        description: Newline-separated commands to run
+        type: string
+        default: |
+          uv run ruff check --config ruff.toml .
+          uv run pytest -q
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ${{ fromJSON(inputs.runs-on) }}
+    timeout-minutes: 30 # a hung test shouldn't burn the 6 h default on private-repo minutes
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - name: Shared ruff.toml
+        uses: actions/checkout@v7
+        with:
+          repository: ${{ job.workflow_repository }}
+          ref: ${{ job.workflow_sha }}
+          path: .shared-workflows
+          sparse-checkout: ruff.toml
+          sparse-checkout-cone-mode: false
+          persist-credentials: false
+
+      - name: Put ruff.toml at the repo root
+        run: |
+          for f in ruff.toml .ruff.toml; do
+            if [ -e "$f" ]; then
+              echo "::error file=$f::the ruff config lives in basmith7/workflows/ruff.toml; delete this repo's $f"
+              exit 1
+            fi
+          done
+          mv .shared-workflows/ruff.toml ruff.toml
+
+      - if: inputs.apt-packages != ''
+        env:
+          APT_PACKAGES: ${{ inputs.apt-packages }}
+        run: |
+          sudo apt-get update -q
+          xargs sudo apt-get install -yq --no-install-recommends <<<"$APT_PACKAGES"
+
+      - uses: astral-sh/setup-uv@v10.3.3
+        with:
+          python-version: ${{ inputs.python-version }}
+
+      - name: Checks
+        env:
+          COMMANDS: ${{ inputs.commands }}
+        run: |
+          while IFS= read -r cmd; do
+            [ -n "${cmd// }" ] || continue
+            echo "::group::$cmd"
+            bash -eo pipefail -c "$cmd" || { echo "::endgroup::"; echo "::error::failed: $cmd"; exit 1; }
+            echo "::endgroup::"
+          done <<<"$COMMANDS"

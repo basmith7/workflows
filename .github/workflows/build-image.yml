@@ -3,7 +3,7 @@ name: Build image
 # Builds one Docker image from the calling repo and pushes it to ghcr.io/<owner>/<image>,
 # with the OCI source/revision/version/created labels and a registry layer cache at :buildcache
 # (a GitHub Actions cache is scoped to the triggering ref, so tag builds could never reuse it).
-# Called from a repo's own workflow; see the README for the caller.
+# Called from a repo's build.yml; see templates/build.yml.
 on:
   workflow_call:
     inputs:
