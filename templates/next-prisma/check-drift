@@ -1,0 +1,75 @@
+#!/usr/bin/env bash
+# check-drift <repo-dir>: does an app's Dockerfile and docker-entrypoint.sh match this template?
+# Exit 0 when both conform, 1 on drift (with a unified diff: - template, + app), 2 on misuse.
+#
+# Everything is compared, comments included, except what the app marks with `# app:`:
+#   # app: <why>        starts an app-only block: this line and every line after it up to the
+#                       next blank line are ignored. Put a blank line after the block.
+#   # app: -<line>      the app leaves out this exact template line (leading and trailing
+#                       whitespace aside). A line that isn't in the template is drift.
+# Markers may be indented (shell blocks). After removal, runs of blank lines count as one.
+set -euo pipefail
+
+[ $# -eq 1 ] || { echo "usage: check-drift <repo-dir>" >&2; exit 2; }
+case $1 in -h | --help) awk 'NR > 1 && !/^#/ { exit } NR > 1 { sub(/^# ?/, ""); print }' "$0"; exit 0 ;; esac
+repo=${1%/}
+[ -d "$repo" ] || { echo "check-drift: $repo is not a directory" >&2; exit 2; }
+template_dir=$(dirname "$(readlink -f "$0")")
+
+tmp=$(mktemp -d)
+trap 'rm -rf "$tmp"' EXIT
+
+# strip_app <file> <drops-out>: print <file> without its `# app:` blocks and drop lines, and
+# write the dropped template lines (trimmed) to <drops-out>.
+strip_app() {
+  : >"$2"
+  awk -v drops="$2" '
+    function trim(s) { sub(/^[ \t]+/, "", s); sub(/[ \t]+$/, "", s); return s }
+    /^[ \t]*# app: -/ { line = $0; sub(/^[ \t]*# app: -/, "", line); print trim(line) > drops; next }
+    /^[ \t]*# app:/   { inblock = 1; next }
+    inblock && /^[ \t]*$/ { inblock = 0 }
+    !inblock
+  ' "$1"
+}
+
+# drop_lines <file> <drops> <stale-out>: print <file> without the first match of each drop
+# line; drop lines that match nothing go to <stale-out>.
+drop_lines() {
+  : >"$3"
+  awk -v stale="$3" '
+    function trim(s) { sub(/^[ \t]+/, "", s); sub(/[ \t]+$/, "", s); return s }
+    FILENAME == ARGV[1] { want[++n] = $0; next }
+    {
+      for (i = 1; i <= n; i++)
+        if (!(i in used) && trim($0) == want[i]) { used[i] = 1; next }
+      print
+    }
+    END { for (i = 1; i <= n; i++) if (!(i in used)) print want[i] > stale }
+  ' "$2" "$1"
+}
+
+drift=0
+for f in Dockerfile docker-entrypoint.sh; do
+  if [ ! -f "$repo/$f" ]; then
+    echo "check-drift: $repo/$f is missing"
+    drift=1
+    continue
+  fi
+  strip_app "$repo/$f" "$tmp/drops" | cat -s >"$tmp/app"
+  drop_lines "$template_dir/$f" "$tmp/drops" "$tmp/stale" | cat -s >"$tmp/template"
+  if [ -s "$tmp/stale" ]; then
+    echo "check-drift: $repo/$f drops lines the template doesn't have:"
+    sed 's/^/  # app: -/' "$tmp/stale"
+    drift=1
+  fi
+  if ! diff -u --label "template/$f" --label "$repo/$f (# app: lines removed)" \
+    "$tmp/template" "$tmp/app"; then
+    drift=1
+  fi
+done
+
+if [ "$drift" -ne 0 ]; then
+  echo "check-drift: $repo drifts from $template_dir. Copy the template's lines, or mark" \
+    "app-only lines with '# app:' (check-drift --help)." >&2
+fi
+exit "$drift"

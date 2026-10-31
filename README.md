@@ -1,7 +1,8 @@
 # workflows
 
-Reusable GitHub Actions workflows for basmith7's own apps. Public so that public and private
-repos can both call them; there is nothing secret here. Not accepting contributions.
+Reusable GitHub Actions workflows and shared app templates for basmith7's own apps. Public so
+that public and private repos can both call them; there is nothing secret here. Not accepting
+contributions.
 
 ## `build-image.yml`
 
@@ -27,3 +28,20 @@ jobs:
 ```
 
 Tagging and deploying stay with the caller; this only builds and pushes.
+
+## `templates/next-prisma/`
+
+The one Next+Prisma `Dockerfile` and `docker-entrypoint.sh`. Each app keeps a copy rather than a
+base image, so a per-app tweak stays one line. Anything app-only is marked with `# app:`.
+`check-drift <repo-dir>` diffs an app's copy against the template, ignoring the marked lines, and
+exits nonzero on drift. `check-drift --help` gives the marker rules.
+
+- The image builds without the optional `npm_token` secret; pass it (`npm-token: true` in the
+  caller of `build-image.yml`) when the app installs `@basmith7` packages from GitHub Packages.
+  It copies `.npmrc`, so every app needs one, even if it only names the registry.
+- The entrypoint runs `prisma migrate deploy` on every start. It also runs the seed when
+  `SEED_ON_START=1`.
+- The two `# TEMP: revert when nodejs/node#66871 ships` lines (and their marker) go from every
+  app at once when the Node fix lands.
+
+`tests/check-drift.test.sh` tests the checker against fixture apps made from the live template.
