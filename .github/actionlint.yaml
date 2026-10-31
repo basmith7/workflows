@@ -1,0 +1,5 @@
+paths:
+  .github/workflows/python-ci.yml:
+    ignore:
+      # job.workflow_repository and job.workflow_sha are newer than actionlint's context table.
+      - 'property "workflow_(repository|sha)" is not defined'

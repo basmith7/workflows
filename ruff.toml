@@ -1,0 +1,34 @@
+# The one ruff rule set for basmith7's Python repos. python-ci.yml copies it into the caller's
+# checkout; locally: uv run ruff check --config ~/Projects/workflows/ruff.toml .
+# It picks rules that find bugs and dead code, plus import order and pyupgrade (both autofix).
+# Line length and other pure style rules aren't enforced.
+line-length = 100
+target-version = "py312"
+
+[lint]
+select = [
+  "F",      # pyflakes
+  "E4",     # import placement
+  "E9",     # syntax and io errors
+  "I",      # import order
+  "B",      # flake8-bugbear
+  "UP",     # pyupgrade
+  "RUF100", # unused noqa
+]
+ignore = [
+  "B905", # zip() without strict=: too noisy for the bugs it finds
+]
+
+[lint.flake8-bugbear]
+# FastAPI's dependency markers are meant to be called in argument defaults (B008).
+extend-immutable-calls = [
+  "fastapi.Body",
+  "fastapi.Cookie",
+  "fastapi.Depends",
+  "fastapi.File",
+  "fastapi.Form",
+  "fastapi.Header",
+  "fastapi.Path",
+  "fastapi.Query",
+  "fastapi.Security",
+]
