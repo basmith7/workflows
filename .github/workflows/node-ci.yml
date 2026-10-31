@@ -26,10 +26,6 @@ on:
         description: Newline-separated commands to run; empty runs npm run lint, typecheck, test and build, each only if package.json has it
         type: string
         default: ""
-      timeout-minutes:
-        description: Job timeout
-        type: number
-        default: 30
 
 permissions:
   contents: read
@@ -38,7 +34,7 @@ permissions:
 jobs:
   check:
     runs-on: ${{ fromJSON(inputs.runs-on) }}
-    timeout-minutes: ${{ inputs.timeout-minutes }}
+    timeout-minutes: 30 # a hung test or build shouldn't burn the 6 h default on private-repo minutes
     steps:
       - uses: actions/checkout@v7
         with:

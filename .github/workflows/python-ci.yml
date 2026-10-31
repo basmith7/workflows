@@ -25,10 +25,6 @@ on:
         default: |
           uv run ruff check --config ruff.toml .
           uv run pytest -q
-      timeout-minutes:
-        description: Job timeout
-        type: number
-        default: 30
 
 permissions:
   contents: read
@@ -36,7 +32,7 @@ permissions:
 jobs:
   check:
     runs-on: ${{ fromJSON(inputs.runs-on) }}
-    timeout-minutes: ${{ inputs.timeout-minutes }}
+    timeout-minutes: 30 # a hung test shouldn't burn the 6 h default on private-repo minutes
     steps:
       - uses: actions/checkout@v7
         with:
@@ -61,14 +57,13 @@ jobs:
             fi
           done
           mv .shared-workflows/ruff.toml ruff.toml
-          rm -rf .shared-workflows
 
       - if: inputs.apt-packages != ''
         env:
           APT_PACKAGES: ${{ inputs.apt-packages }}
         run: |
-          # shellcheck disable=SC2086 # one package per word
-          sudo apt-get update -q && sudo apt-get install -yq --no-install-recommends $APT_PACKAGES
+          sudo apt-get update -q
+          xargs sudo apt-get install -yq --no-install-recommends <<<"$APT_PACKAGES"
 
       - uses: astral-sh/setup-uv@v10.3.3
         with:

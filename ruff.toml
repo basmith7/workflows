@@ -1,7 +1,7 @@
 # The one ruff rule set for basmith7's Python repos. python-ci.yml copies it into the caller's
 # checkout; locally: uv run ruff check --config ~/Projects/workflows/ruff.toml .
 # It picks rules that find bugs and dead code, plus import order and pyupgrade (both autofix).
-# Line length and other style rules are left to the formatter.
+# Line length and other pure style rules aren't enforced.
 line-length = 100
 target-version = "py312"
 

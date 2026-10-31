@@ -14,10 +14,9 @@ Callers pin `@main`, so a push here changes every app's CI and builds at once.
 
 ## `node-ci.yml`
 
-`npm ci` (with the npm cache), then the repo's checks: by default `npm run` lint, typecheck, test
-and build, each only if `package.json` defines it. `commands` replaces that list. `packages-read`
-authenticates npm to GitHub Packages for `@basmith7/*` packages; the caller then grants
-`packages: read`. `prisma` runs `prisma generate` first.
+`npm ci` (with the npm cache), then by default `npm run` lint, typecheck, test and build, each
+only if `package.json` defines it, so most repos pass no `commands`. A repo that installs
+`@basmith7/*` packages sets `packages-read` and its caller job grants `packages: read`.
 
 ## `python-ci.yml`
 
