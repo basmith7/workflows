@@ -63,8 +63,8 @@ insert_before "$d/Dockerfile" 'EXPOSE 3000' 'RUN apk add --no-cache curl'
 expect 1 unmarked '+RUN apk add --no-cache curl'
 
 d=$(app changed)
-sed -i 's/^FROM node:22-alpine AS runner$/FROM node:24-alpine AS runner/' "$d/Dockerfile"
-expect 1 changed '+FROM node:24-alpine AS runner'
+sed -i -E 's/^FROM node:[0-9]+-alpine AS runner$/FROM node:0-alpine AS runner/' "$d/Dockerfile"
+expect 1 changed '+FROM node:0-alpine AS runner'
 
 d=$(app missing-line)
 grep -vxF 'COPY --from=builder /app/public ./public' "$TPL/Dockerfile" >"$d/Dockerfile"

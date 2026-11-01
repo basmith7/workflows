@@ -1,7 +1,7 @@
 # syntax=docker/dockerfile:1
 # Canonical Next+Prisma image: basmith7/workflows templates/next-prisma. Keep this file a copy
 # of the template; mark app-only lines with `# app:` and check with `check-drift <repo-dir>`.
-FROM node:22-alpine AS base
+FROM node:24-alpine AS base
 WORKDIR /app
 # python3/make/g++ compile better-sqlite3's native addon for this image's
 # platform - it can't be reused from a host build.
@@ -25,12 +25,9 @@ COPY . .
 RUN npx prisma generate
 RUN npm run build
 
-FROM node:22-alpine AS runner
+FROM node:24-alpine AS runner
 WORKDIR /app
 ENV NODE_ENV=production
-# TEMP: revert when nodejs/node#66871 ships (eMudhra CA: use the patched OS store, not Node's roots)
-RUN apk upgrade --no-cache ca-certificates-bundle
-ENV NODE_OPTIONS=--use-openssl-ca
 
 COPY --from=deps /app/node_modules ./node_modules
 COPY --from=builder /app/.next ./.next

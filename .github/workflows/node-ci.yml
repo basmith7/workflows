@@ -14,7 +14,7 @@ on:
       node-version:
         description: Node version for actions/setup-node
         type: string
-        default: "22"
+        default: "24"
       packages-read:
         description: Authenticate npm to GitHub Packages for @basmith7 packages (the caller grants packages read)
         type: boolean
