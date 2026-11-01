@@ -76,9 +76,10 @@ updates arrive as one grouped PR each Monday morning and merge themselves (`plat
 off because free private repos have no required checks, so GitHub's own auto-merge would not
 wait for CI); majors open as PRs for a person. `basmith7/workflows@main` refs are never touched.
 
-Renovate regenerates lockfiles with npm 10 (`constraints`), the npm that ships with CI's Node 22.
-Its default npm 12 refuses the registry tarball URLs in Tailwind's lockfile entries (`EALLOWREMOTE`,
-npm/cli#9800); move the pin with CI's Node version.
+Renovate regenerates lockfiles with npm 11 (`constraints`). Its default npm 12 refuses the registry
+tarball URLs in Tailwind's lockfile entries (`EALLOWREMOTE`, npm/cli#9800), and npm 10 fails on
+`@vitejs/plugin-react`'s optional Babel 8 peer chain (`ERESOLVE`). CI's npm 10 installs npm 11
+lockfiles; drop the pin once npm 12 fixes #9800.
 
 `@basmith7/*` packages on GitHub Packages are read with the `GH_PACKAGES_TOKEN` credential (a
 classic token with `read:packages`), stored in the Mend developer portal
