@@ -1,8 +1,8 @@
 name: Node CI
 
 # Installs a Node repo's dependencies (npm ci, with the npm cache) and runs its checks.
-# Called from a repo's ci.yml on pull requests and from the test job of its build.yml;
-# see templates/ for both callers. With docker-template set, it first runs this repo's
+# Called from a repo's ci.yml, which runs on pull requests and as the test job of its build.yml;
+# see templates/. With docker-template set, it first runs this repo's
 # templates/<docker-template>/check-drift, from the same commit as this workflow, on the caller.
 on:
   workflow_call:
