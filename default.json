@@ -9,7 +9,7 @@
   "platformAutomerge": false,
   "automergeType": "pr",
   "automergeStrategy": "merge-commit",
-  "constraints": { "npm": "^10" },
+  "constraints": { "npm": "^11" },
   "hostRules": [
     {
       "hostType": "npm",
