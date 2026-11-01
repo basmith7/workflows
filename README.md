@@ -17,6 +17,8 @@ Callers pin `@main`, so a push here changes every app's CI and builds at once.
 `npm ci` (with the npm cache), then by default `npm run` lint, typecheck, test and build, each
 only if `package.json` defines it, so most repos pass no `commands`. A repo that installs
 `@basmith7/*` packages sets `packages-read` and its caller job grants `packages: read`.
+`docker-template: <name>` runs `templates/<name>/check-drift` on the repo before anything else,
+from the same commit of this repo as the workflow (see below).
 
 ## `python-ci.yml`
 
@@ -44,6 +46,11 @@ The one Next+Prisma `Dockerfile` and `docker-entrypoint.sh`. Each app keeps a co
 base image, so a per-app tweak stays one line. Anything app-only is marked with `# app:`.
 `check-drift <repo-dir>` diffs an app's copy against the template, ignoring the marked lines, and
 exits nonzero on drift. `check-drift --help` gives the marker rules.
+
+Every app built from it is held to it in CI: its `ci.yml` and `build.yml`'s `test` job pass
+`docker-template: next-prisma` to `node-ci.yml`. A template change here therefore fails every
+app's next PR and tag build until the app copies it in (run
+`~/Projects/workflows/templates/next-prisma/check-drift .` in the app to see the diff).
 
 - The image builds without the optional `npm_token` secret; pass it (`npm-token: true` in the
   caller of `build-image.yml`) when the app installs `@basmith7` packages from GitHub Packages.
