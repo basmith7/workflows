@@ -9,6 +9,7 @@
   "platformAutomerge": false,
   "automergeType": "pr",
   "automergeStrategy": "merge-commit",
+  "semanticCommits": "disabled",
   "constraints": { "npm": "^11" },
   "hostRules": [
     {
@@ -28,6 +29,19 @@
       "description": "Majors get their own PR and wait for a person.",
       "matchUpdateTypes": ["major"],
       "automerge": false
+    },
+    {
+      "description": "Base images are never built by PR CI, so their updates wait for a person.",
+      "matchManagers": ["dockerfile"],
+      "groupName": "base images",
+      "groupSlug": "base-images",
+      "automerge": false
+    },
+    {
+      "description": "A Node major moves templates/next-prisma and node-ci first; it opens only when ticked on the dashboard.",
+      "matchDepNames": ["node"],
+      "matchUpdateTypes": ["major"],
+      "dependencyDashboardApproval": true
     },
     {
       "description": "Callers track basmith7/workflows at @main on purpose; never pin or bump it.",
