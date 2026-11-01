@@ -66,26 +66,3 @@ see the diff). A Node major bump lands here first (the `FROM` lines, and `node-c
   app at once when the Node fix lands.
 
 `tests/check-drift.test.sh` tests the checker against fixture apps made from the live template.
-
-## Renovate: `default.json`
-
-The one dependency-update policy. A repo opts in with a `renovate.json` of
-`{"extends": ["github>basmith7/workflows"]}` once CI gates its pull requests (Renovate merges only
-after CI passes, and a repo with no checks has nothing to wait for). Minor and patch
-updates arrive as one grouped PR each Monday morning and merge themselves (`platformAutomerge` is
-off because free private repos have no required checks, so GitHub's own auto-merge would not
-wait for CI); majors open as PRs for a person. Base-image (`FROM`) updates come as their own PR
-and wait for a person, because PR CI never builds the image; a Node major opens only when ticked on
-the Dependency Dashboard, since it moves `templates/next-prisma` and node-ci's default first.
-`basmith7/workflows@main` refs are never touched.
-
-Renovate regenerates lockfiles with npm 11 (`constraints`). Its default npm 12 refuses the registry
-tarball URLs in Tailwind's lockfile entries (`EALLOWREMOTE`, npm/cli#9800), and npm 10 fails on
-`@vitejs/plugin-react`'s optional Babel 8 peer chain (`ERESOLVE`). CI's npm 10 installs npm 11
-lockfiles; drop the pin once npm 12 fixes #9800.
-
-`@basmith7/*` packages on GitHub Packages are read with the `GH_PACKAGES_TOKEN` credential (a
-classic token with `read:packages`), stored in the Mend developer portal
-(developer.mend.io → basmith7 → Settings → Credentials). The hosted app no longer reads
-encrypted secrets from config files. Validate changes with
-`npx --yes --package renovate@latest renovate-config-validator --strict default.json`.
