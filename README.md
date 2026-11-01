@@ -5,10 +5,14 @@ their Next+Prisma Dockerfile. Public so that public and private repos can both c
 is nothing secret here. Not accepting contributions.
 
 App repos hold only thin callers. Start from [`templates/`](templates): `ci.yml` runs the checks
-on pull requests (skipped when only docs change), and `build.yml` runs the same checks on a `v*`
-tag before building the image. Every workflow's inputs and defaults are documented at the top of
-its file, and every one takes `runs-on` as JSON (`'"ubuntu-latest"'` or a list of labels), so a
-repo can move to a self-hosted runner without forking anything.
+on pull requests (skipped when only docs change) and holds the repo's one copy of its CI inputs
+(its `with:`). `build.yml`'s `test` job calls that `ci.yml` (`uses: ./.github/workflows/ci.yml`)
+on a `v*` tag before building the image, so a tag runs exactly the PR checks. A called run has
+no path filter, and it takes its caller's `github` context (event `push`, the tag's ref), so it
+never shares a concurrency group with a PR run and is never cancelled. Every workflow's inputs
+and defaults are documented at the top of its file, and every one takes `runs-on` as JSON
+(`'"ubuntu-latest"'` or a list of labels), so a repo can move to a self-hosted runner without
+forking anything.
 
 Callers pin `@main`, so a push here changes every app's CI and builds at once.
 
@@ -47,10 +51,11 @@ base image, so a per-app tweak stays one line. Anything app-only is marked with 
 `check-drift <repo-dir>` diffs an app's copy against the template, ignoring the marked lines, and
 exits nonzero on drift. `check-drift --help` gives the marker rules.
 
-Every app built from it is held to it in CI: its `ci.yml` and `build.yml`'s `test` job pass
-`docker-template: next-prisma` to `node-ci.yml`. A template change here therefore fails every
-app's next PR and tag build until the app copies it in (run
-`~/Projects/workflows/templates/next-prisma/check-drift .` in the app to see the diff).
+Every app built from it is held to it in CI: its `ci.yml` passes `docker-template: next-prisma`
+to `node-ci.yml`. A template change here therefore fails every app's next PR and tag build until
+the app copies it in (run `~/Projects/workflows/templates/next-prisma/check-drift .` in the app to
+see the diff). A Node major bump lands here first (the `FROM` lines, and `node-ci.yml`'s
+`node-version` default), then in each app; an app that bumps first fails its drift check.
 
 - The image builds without the optional `npm_token` secret; pass it (`npm-token: true` in the
   caller of `build-image.yml`) when the app installs `@basmith7` packages from GitHub Packages.

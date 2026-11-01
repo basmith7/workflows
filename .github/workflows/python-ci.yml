@@ -3,7 +3,8 @@ name: Python CI
 # Runs a uv project's checks: by default ruff with the shared rule set, then pytest.
 # The shared ruff.toml (this repo's root) is copied into the caller's checkout from the same
 # commit as this workflow, since ruff can't extend a remote config. A repo keeps no ruff.toml
-# of its own. Called from a repo's ci.yml and from the test job of its build.yml.
+# of its own. Called from a repo's ci.yml, which runs on pull requests and as the test job of its
+# build.yml.
 on:
   workflow_call:
     inputs:

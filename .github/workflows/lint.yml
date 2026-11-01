@@ -1,7 +1,7 @@
 name: Lint
 
-# actionlint over this repo's workflows and the caller templates (the templates aren't under
-# .github/workflows, so they're named explicitly).
+# actionlint over this repo's workflows and the caller templates. The templates are linted as an
+# app holds them (in a git repo's .github/workflows), so build.yml's call to ./ci.yml resolves.
 on:
   pull_request:
   push:
@@ -20,4 +20,8 @@ jobs:
       - name: actionlint
         run: |
           docker run --rm -v "$PWD:/repo" -w /repo rhysd/actionlint:1.7.12 -color
-          docker run --rm -v "$PWD:/repo" -w /repo rhysd/actionlint:1.7.12 -color templates/*.yml
+          app=$(mktemp -d)
+          mkdir -p "$app/.github/workflows"
+          cp templates/*.yml "$app/.github/workflows/"
+          git -C "$app" init -q
+          docker run --rm -v "$app:/repo" -w /repo rhysd/actionlint:1.7.12 -color
