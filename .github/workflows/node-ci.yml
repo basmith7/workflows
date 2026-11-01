@@ -2,7 +2,8 @@ name: Node CI
 
 # Installs a Node repo's dependencies (npm ci, with the npm cache) and runs its checks.
 # Called from a repo's ci.yml on pull requests and from the test job of its build.yml;
-# see templates/ for both callers.
+# see templates/ for both callers. With docker-template set, it first runs this repo's
+# templates/<docker-template>/check-drift, from the same commit as this workflow, on the caller.
 on:
   workflow_call:
     inputs:
@@ -22,6 +23,10 @@ on:
         description: Run prisma generate after installing
         type: boolean
         default: false
+      docker-template:
+        description: Shared Dockerfile template (e.g. next-prisma) the repo's copies must match; its check-drift runs before anything else. Empty skips
+        type: string
+        default: ""
       commands:
         description: Newline-separated commands to run; empty runs npm run lint, typecheck, test and build, each only if package.json has it
         type: string
@@ -39,6 +44,23 @@ jobs:
       - uses: actions/checkout@v7
         with:
           persist-credentials: false
+
+      - name: Shared Docker template
+        if: inputs.docker-template != ''
+        uses: actions/checkout@v7
+        with:
+          repository: ${{ job.workflow_repository }}
+          ref: ${{ job.workflow_sha }}
+          path: .shared-workflows
+          sparse-checkout: templates/${{ inputs.docker-template }}
+          sparse-checkout-cone-mode: false
+          persist-credentials: false
+
+      - name: Docker template drift
+        if: inputs.docker-template != ''
+        env:
+          TEMPLATE: ${{ inputs.docker-template }}
+        run: .shared-workflows/templates/"$TEMPLATE"/check-drift .
 
       - uses: actions/setup-node@v7
         with:

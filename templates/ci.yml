@@ -1,7 +1,8 @@
 name: CI
 
 # Pull-request checks, shared: https://github.com/basmith7/workflows
-# Inputs (packages-read, prisma, commands, ...) are documented at the top of node-ci.yml.
+# Inputs (packages-read, prisma, docker-template, commands, ...) are documented at the top of
+# node-ci.yml. An app whose Dockerfile copies templates/next-prisma sets docker-template.
 # A repo that commits straight to main also adds `push: { branches: [main], paths-ignore: ... }`.
 on:
   pull_request:
