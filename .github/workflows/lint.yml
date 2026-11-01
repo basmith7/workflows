@@ -21,6 +21,7 @@ jobs:
         run: |
           docker run --rm -v "$PWD:/repo" -w /repo rhysd/actionlint:1.7.12 -color
           app=$(mktemp -d)
+          chmod 755 "$app" # the actionlint image runs as an unprivileged user; mktemp makes it 0700
           mkdir -p "$app/.github/workflows"
           cp templates/*.yml "$app/.github/workflows/"
           git -C "$app" init -q
